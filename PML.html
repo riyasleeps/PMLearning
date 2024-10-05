@@ -1,0 +1,81 @@
+library(caret)  # For data partitioning and model evaluation
+library(randomForest)  # For random forest model
+library(ggplot2)  # For data visualization
+
+# This section loads the necessary libraries for the analysis.
+# The libraries include:
+# - `caret`: for data partitioning and model evaluation.
+# - `randomForest`: to implement the random forest algorithm.
+# - `ggplot2`: for data visualization.
+# - `rpart`: for creating decision tree models.
+# - `rpart.plot`: to visualize the decision trees.
+
+
+# File paths and URLs for data sources
+train_data_path <- './data/pml-training.csv'
+test_data_path  <- './data/pml-testing.csv'
+train_data_url  <- 'http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv'
+test_data_url   <- 'http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv'
+
+
+# Creating directories if not already present
+if (!dir.exists("data")) {
+  dir.create("data")
+}
+if (!dir.exists("data/results")) {
+  dir.create("data/results")
+}
+
+# Setting seed for reproducibility of the analysis
+set.seed(15342)
+# Reading the datasets and handling missing values
+train_data <- read.csv(train_data_path, na.strings = c("NA", "#DIV/0!", ""))
+test_data <- read.csv(test_data_path, na.strings = c("NA", "#DIV/0!", ""))
+
+
+# In this section, we read the training and testing datasets from specified paths.
+# Missing values are handled by setting certain strings (like "NA" and "#DIV/0!") to NA.
+# We then drop any columns that contain missing values to ensure data integrity.
+# Additionally, unnecessary columns (like IDs and timestamps) are removed to focus on relevant features.
+
+# Dropping columns with any missing data
+train_data_clean <- train_data[, colSums(is.na(train_data)) == 0]
+test_data_clean <- test_data[, colSums(is.na(test_data)) == 0]
+
+# Removing unnecessary columns like IDs and timestamps
+train_data_clean <- train_data_clean[, -c(1:7)]
+test_data_clean <- test_data_clean[, -c(1:7)]
+index_train <- createDataPartition(train_data_clean$classe, p = 0.75, list = FALSE)
+training_set <- train_data_clean[index_train, ]  # Ensure you use 'training_set' here
+validation_set <- train_data_clean[-index_train, ]
+
+
+# In this part, we build a decision tree model using the `rpart` function.
+# Predictions are made on the validation set to assess how well the model generalizes to unseen data.
+# The decision tree is then visualized for better understanding of its structure.
+# Finally, we evaluate the model's performance using a confusion matrix, which shows how many predictions were correct and incorrect.
+
+
+# Building a Decision Tree model
+tree_model <- rpart(classe ~ ., data = training_set, method = "class")
+
+# Making predictions using the Decision Tree model
+tree_predictions <- predict(tree_model, validation_set, type = "class")
+
+# Visualizing the Decision Tree structure
+rpart.plot(tree_model, main = "Classification Tree", extra = 104, under = TRUE)
+
+# Evaluating the Decision Tree model with a confusion matrix
+confusionMatrix(tree_predictions, validation_set$classe)
+
+
+# Making predictions for the final test dataset using the trained Random Forest model
+final_predictions <- predict(rf_model, test_data_clean, type = "class")
+
+# Displaying the predictions for submission
+final_predictions
+# This analysis involved loading datasets, cleaning the data, partitioning it for training and validation,
+# building a decision tree and random forest model, and finally making predictions.
+# Future work could include further tuning the model, exploring additional algorithms, 
+# and incorporating feature engineering techniques to improve accuracy.
+
