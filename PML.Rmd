@@ -1,0 +1,89 @@
+---
+title: "Practical Machine Learning Assignment"
+output: html_document
+date: "2024-10-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## R Markdown
+This report demonstrates building and evaluating machine learning models using Decision Tree and Random Forests in R. Below are the results and visualizations from the analysis.
+
+
+## Loading Required Libraries
+
+```{r load_libraries}
+library(caret)  # For data partitioning and model evaluation
+library(randomForest)  # For random forest model
+library(ggplot2)  # For data visualization
+
+# File paths and URLs for data sources
+train_data_path <- './data/pml-training.csv'
+test_data_path  <- './data/pml-testing.csv'
+train_data_url  <- 'http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv'
+test_data_url   <- 'http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv'
+# Creating directories if not already present
+if (!dir.exists("data")) {
+  dir.create("data")
+}
+if (!dir.exists("data/results")) {
+  dir.create("data/results")
+}
+Setting Seed for Reproducibility
+# Setting seed for reproducibility of the analysis
+set.seed(15342)
+
+```
+Reading and Cleaning the Datasets
+```{r}
+# Reading the datasets and handling missing values
+train_data <- read.csv(train_data_path, na.strings = c("NA", "#DIV/0!", ""))
+test_data <- read.csv(test_data_path, na.strings = c("NA", "#DIV/0!", ""))
+
+# Dropping columns with any missing data
+train_data_clean <- train_data[, colSums(is.na(train_data)) == 0]
+test_data_clean <- test_data[, colSums(is.na(test_data)) == 0]
+
+# Removing unnecessary columns like IDs and timestamps
+train_data_clean <- train_data_clean[, -c(1:7)]
+test_data_clean <- test_data_clean[, -c(1:7)]
+
+
+
+```
+
+Splitting the Training Data
+```{r}
+index_train <- createDataPartition(train_data_clean$classe, p = 0.75, list = FALSE)
+training_set <- train_data_clean[index_train, ]  # Ensure you use 'training_set' here
+validation_set <- train_data_clean[-index_train, ]
+
+```
+## Splitting the Training Data
+# Building a Decision Tree model
+tree_model <- rpart(classe ~ ., data = training_set, method = "class")
+
+# Making predictions using the Decision Tree model
+tree_predictions <- predict(tree_model, validation_set, type = "class")
+
+# Visualizing the Decision Tree structure
+rpart.plot(tree_model, main = "Classification Tree", extra = 104, under = TRUE)
+
+# Evaluating the Decision Tree model with a confusion matrix
+confusionMatrix(tree_predictions, validation_set$classe)
+
+
+```
+
+```{r split_data}
+index_train <- createDataPartition(train_data_clean$classe, p = 0.75, list = FALSE)
+training_set <- train_data_clean[index_train, ]  # Ensure you use 'training_set' here
+validation_set <- train_data_clean[-index_train, ]
+# Making predictions for the final test dataset using the trained Random Forest model
+final_predictions <- predict(rf_model, test_data_clean, type = "class")
+
+# Displaying the predictions for submission
+final_predictions
